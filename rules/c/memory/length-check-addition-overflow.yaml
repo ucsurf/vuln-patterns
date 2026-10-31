@@ -1,7 +1,7 @@
 rules:
 - id: length-check-addition-overflow
   languages: [c]
-  severity: WARNING
+  severity: INFO
   message: >-
     Bounds check of the form `off + len > size` can wrap around for large `len`,
     passing the check and causing an out-of-bounds read/write. Use `len > size - off`
@@ -12,7 +12,14 @@ rules:
     confidence: LOW
     references:
       - https://github.com/advisories/GHSA-qfrc-22x5-wpfc
-  pattern-either:
-    - pattern: if ($A + $B > $SIZE) $BODY;
-    - pattern: if ($A + $B >= $SIZE) $BODY;
-    - pattern: if ($SIZE < $A + $B) $BODY;
+  patterns:
+    - pattern-either:
+      - pattern: if ($A + $B > $SIZE) $BODY;
+      - pattern: if ($A + $B >= $SIZE) $BODY;
+      - pattern: if ($SIZE < $A + $B) $BODY;
+    - metavariable-regex:
+        metavariable: $A
+        regex: (?i)^\w*(off|offset|pos|position|start|idx|index)$
+    - metavariable-regex:
+        metavariable: $B
+        regex: (?i)^\w*(len|length|size|sz|count|n)$

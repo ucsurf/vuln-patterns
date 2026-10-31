@@ -12,3 +12,11 @@ func f(br []int64) {
 	b3 := make([]byte, n)
 	_, _, _ = buf, b2, b3
 }
+
+func g(d *digest) []byte {
+	// ok: make-slice-unchecked-length
+	pad := make([]byte, len(d.x)-d.nx)
+	// ok: make-slice-unchecked-length
+	names := make([]string, MAXREG-MINREG)
+	return append(pad, names[0]...)
+}

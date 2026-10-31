@@ -13,12 +13,13 @@ rules:
       - https://github.com/advisories/GHSA-c8v6-r46j-hm35
   patterns:
     - pattern-either:
-      - pattern: make($T, $A - $B)
-      - pattern: make($T, int($X))
-      - pattern: make($T, $A - $B, $C)
-    - pattern-not-inside: |
-        if <... $A - $B ...> { ... }
-        ...
+      - pattern: make($T, $X[$I] - $Y[$J])
+      - pattern: make($T, $X[$I] - $Y[$J], $C)
+      - pattern: make($T, int($X.$F))
+      - pattern: make($T, int($X[$I]))
     - pattern-not-inside: |
         if <... $X ...> { ... }
+        ...
+    - pattern-not-inside: |
+        if <... $Y ...> { ... }
         ...

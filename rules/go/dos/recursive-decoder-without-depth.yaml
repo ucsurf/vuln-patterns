@@ -1,7 +1,7 @@
 rules:
 - id: recursive-decoder-without-depth
   languages: [go]
-  severity: WARNING
+  severity: INFO
   message: >-
     Recursive decode/parse function with no depth parameter. Deeply nested input
     recurses until the goroutine stack overflows, which is a fatal, unrecoverable crash.
