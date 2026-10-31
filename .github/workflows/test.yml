@@ -1,0 +1,33 @@
+name: Rules
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install semgrep==1.183.0 yamllint
+      - name: yamllint
+        run: yamllint -c .yamllint.yml rules/ .github/
+      - name: Validate rules
+        run: semgrep --validate --metrics=off --config rules/
+      - name: Test rules
+        run: semgrep --test rules/
+      - name: Every rule has docs and >=2 ruleid / >=1 ok cases
+        run: |
+          fail=0
+          for y in $(find rules -name '*.yaml'); do
+            id=$(sed -n 's/^- id: //p' "$y")
+            t=$(ls "${y%.yaml}".* | grep -v '\.yaml$')
+            [ -f "docs/$id.md" ] || { echo "missing docs/$id.md"; fail=1; }
+            [ "$(grep -c "ruleid: $id" "$t")" -ge 2 ] || { echo "$id: <2 ruleid"; fail=1; }
+            [ "$(grep -c "ok: $id" "$t")" -ge 1 ] || { echo "$id: no ok case"; fail=1; }
+          done
+          exit $fail

@@ -1,0 +1,23 @@
+rules:
+- id: ajv-addschema-untrusted-id
+  languages: [javascript, typescript]
+  severity: WARNING
+  message: >-
+    Schema from request data is registered with Ajv. An attacker-chosen `$id` can
+    override or shadow a trusted schema (schema `$id` override). Strip/validate `$id`
+    or compile untrusted schemas in a separate Ajv instance.
+  metadata: {cwe: "CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes", category: security, confidence: MEDIUM}
+  mode: taint
+  pattern-sources:
+    - pattern-either:
+      - pattern: $REQ.body
+      - pattern: $REQ.query
+      - pattern: JSON.parse(...)
+  pattern-sanitizers:
+    - pattern: "{...$X, $id: undefined}"
+  pattern-sinks:
+    - patterns:
+      - pattern-either:
+        - pattern: $AJV.addSchema($S, ...)
+        - pattern: $AJV.compile($S)
+      - focus-metavariable: $S

@@ -1,0 +1,18 @@
+rules:
+- id: sso-trust-email-verified
+  languages: [javascript, typescript]
+  severity: WARNING
+  message: >-
+    SSO is configured to trust the provider's `email_verified` claim. If any user can
+    register an SSO provider (or providers are not fully trusted), an attacker-controlled
+    IdP can assert a victim's email and log in as them (account takeover).
+    Restrict provider registration to admins or disable trustEmailVerified.
+  metadata:
+    cwe: "CWE-287: Improper Authentication"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-785j-54p4-vxw9
+  pattern-either:
+    - pattern: "sso({..., trustEmailVerified: true, ...})"
+    - pattern: "{..., trustEmailVerified: true, ...}"

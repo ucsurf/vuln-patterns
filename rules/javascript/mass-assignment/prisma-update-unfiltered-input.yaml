@@ -1,0 +1,32 @@
+rules:
+- id: prisma-update-unfiltered-input
+  languages: [javascript, typescript]
+  severity: ERROR
+  message: >-
+    Client-supplied object is passed as Prisma `data` without picking allowed fields.
+    Nested relation operations (e.g. `user: {connect: ...}`) let a caller rewrite
+    ownership or other users' records (mass assignment).
+  metadata:
+    cwe: "CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-jhfj-c242-ghx4
+  mode: taint
+  pattern-sources:
+    - pattern-either:
+      - pattern: $REQ.body
+      - pattern: "($ARG: $T).input"
+      - pattern: $CTX.input
+  pattern-sinks:
+    - patterns:
+      - pattern-either:
+        - pattern: "$P.$M.update({..., data: $D, ...})"
+        - pattern: "$P.$M.updateMany({..., data: $D, ...})"
+        - pattern: "$P.$M.upsert({..., update: $D, ...})"
+        - pattern: "$P.$M.create({..., data: $D, ...})"
+      - focus-metavariable: $D
+  pattern-sanitizers:
+    - pattern: "{name: $X.name, ...}"
+    - pattern: $SCHEMA.parse(...)
+    - pattern: pick(...)

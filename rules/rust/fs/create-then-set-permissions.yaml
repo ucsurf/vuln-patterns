@@ -1,0 +1,27 @@
+rules:
+- id: create-then-set-permissions
+  languages: [rust]
+  severity: WARNING
+  message: >-
+    File is created with the default (umask) mode and permissions are applied later.
+    Other users can open it in the window (TOCTOU), and copying setuid/setgid bits onto
+    a file owned by the invoker is dangerous. Create with OpenOptionsExt::mode(0o600)
+    and strip S_ISUID/S_ISGID.
+  metadata:
+    cwe: "CWE-732: Incorrect Permission Assignment for Critical Resource"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-4j37-jjpm-9865
+  patterns:
+    - pattern-either:
+      - pattern-inside: |
+          let $F = File::create($P)?;
+          ...
+      - pattern-inside: |
+          let $F = File::create($P).unwrap();
+          ...
+    - pattern-either:
+      - pattern: fs::set_permissions($P, ...)
+      - pattern: std::fs::set_permissions($P, ...)
+      - pattern: $F.set_permissions(...)

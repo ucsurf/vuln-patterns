@@ -1,0 +1,23 @@
+rules:
+- id: templ-safeurl-dynamic
+  languages: [go]
+  severity: WARNING
+  message: >-
+    A non-constant value is marked as a safe URL. templ (and html/template) skip
+    `javascript:` filtering for it, so attacker input becomes script execution.
+    Validate the scheme (http/https/mailto) before marking it safe.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-94c2-xg24-pwhv
+      - https://github.com/advisories/GHSA-jq3r-rjqp-mwgj
+  patterns:
+    - pattern-either:
+      - pattern: templ.SafeURL($X)
+      - pattern: template.URL($X)
+      - pattern: template.JS($X)
+    - pattern-not: templ.SafeURL("...")
+    - pattern-not: template.URL("...")
+    - pattern-not: template.JS("...")

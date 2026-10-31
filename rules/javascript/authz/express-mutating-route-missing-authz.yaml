@@ -1,0 +1,18 @@
+rules:
+- id: express-mutating-route-missing-authz
+  languages: [javascript, typescript]
+  severity: WARNING
+  message: >-
+    State-changing route uses an object id from the request but the handler chain has
+    no auth/ownership middleware (missing authorization, IDOR).
+  metadata: {cwe: "CWE-862: Missing Authorization", category: security, confidence: LOW}
+  patterns:
+    - pattern-either:
+      - pattern: $APP.$M($PATH, function ($REQ, $RES, ...) { ... })
+      - pattern: $APP.$M($PATH, ($REQ, $RES, ...) => { ... })
+    - metavariable-regex:
+        metavariable: $M
+        regex: "^(put|patch|delete|post)$"
+    - metavariable-regex:
+        metavariable: $PATH
+        regex: '.*/:\w*[iI]d\b.*'

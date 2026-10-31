@@ -1,0 +1,31 @@
+rules:
+- id: recursive-decoder-without-depth
+  languages: [go]
+  severity: WARNING
+  message: >-
+    Recursive decode/parse function with no depth parameter. Deeply nested input
+    recurses until the goroutine stack overflows, which is a fatal, unrecoverable crash.
+  metadata:
+    cwe: "CWE-674: Uncontrolled Recursion"
+    category: security
+    confidence: LOW
+    references:
+      - https://github.com/advisories/GHSA-73g6-2xj8-223q
+  patterns:
+    - pattern-either:
+      - pattern-inside: |
+          func ($R $RT) $F(...) ($T1, $T2) {
+            ...
+          }
+      - pattern-inside: |
+          func ($R $RT) $F(...) error {
+            ...
+          }
+    - pattern: $R.$F(...)
+    - metavariable-regex:
+        metavariable: $F
+        regex: (?i)^(decode|parse|unmarshal|read).*
+    - pattern-not-inside: |
+        func ($R $RT) $F(..., depth int, ...) ($T1, $T2) {
+          ...
+        }

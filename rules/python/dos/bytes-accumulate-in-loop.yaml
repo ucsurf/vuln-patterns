@@ -1,0 +1,32 @@
+rules:
+- id: bytes-accumulate-in-loop
+  languages: [python]
+  severity: WARNING
+  message: >-
+    An immutable bytes/tuple value is rebuilt on every loop iteration. For
+    attacker-controlled fragment counts this is O(n^2) CPU (decoder DoS). Collect parts
+    in a list and join once.
+  metadata:
+    cwe: "CWE-407: Inefficient Algorithmic Complexity"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-2qm8-x737-gmw5
+  patterns:
+    - pattern-inside: |
+        $ACC = $INIT
+        ...
+    - metavariable-pattern:
+        metavariable: $INIT
+        pattern-either:
+          - pattern: b''
+          - pattern: bytes()
+          - pattern: ()
+    - pattern-either:
+      - pattern-inside: |
+          for $V in $IT: ...
+      - pattern-inside: |
+          while $C: ...
+    - pattern-either:
+      - pattern: $ACC += $X
+      - pattern: $ACC = $ACC + $X

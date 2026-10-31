@@ -1,0 +1,20 @@
+rules:
+- id: ammonia-svg-animation-tags
+  languages: [rust]
+  severity: ERROR
+  message: >-
+    SVG animation elements (animate, set, animateTransform, animateMotion, animateColor)
+    are allowed in an HTML sanitizer allow-list. They can set `href`/attributes to
+    `javascript:` at runtime and bypass sanitization (XSS).
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation"
+    category: security
+    confidence: HIGH
+    references:
+      - https://github.com/advisories/GHSA-f2pc-rwv3-69mv
+  patterns:
+    - pattern-either:
+      - pattern: $B.add_tags(...)
+      - pattern: $B.tags(...)
+      - pattern: $B.add_generic_attributes(...)
+    - pattern-regex: (?i)"(animate|set|animatetransform|animatemotion|animatecolor)"

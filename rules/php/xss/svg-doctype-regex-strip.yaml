@@ -1,0 +1,24 @@
+rules:
+- id: svg-doctype-regex-strip
+  languages: [php]
+  severity: WARNING
+  message: >-
+    DOCTYPE/entity stripping is done with a byte regex/str_replace on raw XML. UTF-16
+    (or other non-ASCII-compatible) input with a BOM is not matched, so DTD entities
+    survive into the parser (sanitizer bypass, XSS/XXE). Normalize encoding first or
+    disable DTD loading in the parser.
+  metadata:
+    cwe: "CWE-838: Inappropriate Encoding for Output Context"
+    category: security
+    confidence: MEDIUM
+    references:
+      - https://github.com/advisories/GHSA-vjg7-f2wj-gqqh
+      - https://github.com/advisories/GHSA-9rjx-3jch-6vjf
+  patterns:
+    - pattern-either:
+      - pattern: preg_replace($RE, ...)
+      - pattern: str_ireplace($RE, ...)
+      - pattern: str_replace($RE, ...)
+    - metavariable-regex:
+        metavariable: $RE
+        regex: (?i).*(DOCTYPE|ENTITY).*

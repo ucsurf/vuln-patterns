@@ -1,0 +1,19 @@
+rules:
+- id: x509-verify-time-from-untrusted-timestamp
+  languages: [go]
+  severity: WARNING
+  message: >-
+    Certificate chain validation time is taken from a signature/timestamp value. If that
+    timestamp is not itself verified against a trusted TSA, an attacker can backdate
+    validation so expired or revoked certificates verify.
+  metadata:
+    cwe: "CWE-295: Improper Certificate Validation"
+    category: security
+    confidence: LOW
+    references:
+      - https://github.com/advisories/GHSA-v2pw-gwrw-2p72
+  patterns:
+    - pattern: "x509.VerifyOptions{..., CurrentTime: $T, ...}"
+    - metavariable-regex:
+        metavariable: $T
+        regex: (?i).*(timestamp|signingtime|ts\.|gentime).*

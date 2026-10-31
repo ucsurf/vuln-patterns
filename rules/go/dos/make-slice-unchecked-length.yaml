@@ -1,0 +1,24 @@
+rules:
+- id: make-slice-unchecked-length
+  languages: [go]
+  severity: WARNING
+  message: >-
+    A slice is allocated with a length computed by arithmetic/conversion of parsed values
+    without a bounds check. Negative or huge values panic (makeslice) or exhaust memory.
+  metadata:
+    cwe: "CWE-789: Memory Allocation with Excessive Size Value"
+    category: security
+    confidence: LOW
+    references:
+      - https://github.com/advisories/GHSA-c8v6-r46j-hm35
+  patterns:
+    - pattern-either:
+      - pattern: make($T, $A - $B)
+      - pattern: make($T, int($X))
+      - pattern: make($T, $A - $B, $C)
+    - pattern-not-inside: |
+        if <... $A - $B ...> { ... }
+        ...
+    - pattern-not-inside: |
+        if <... $X ...> { ... }
+        ...

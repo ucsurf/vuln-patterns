@@ -1,0 +1,17 @@
+rules:
+- id: sanitizer-output-mutated-after-clean
+  languages: [python]
+  severity: ERROR
+  message: >-
+    HTML is decoded/unescaped after sanitization. Any transformation after the
+    sanitizer can reintroduce markup (sanitizer bypass / mXSS). Sanitize last.
+  metadata: {cwe: "CWE-79: Cross-site Scripting", category: security, confidence: HIGH}
+  patterns:
+    - pattern-either:
+      - pattern: html.unescape(<... $SAN.clean(...) ...>)
+      - pattern: html.unescape(<... nh3.clean(...) ...>)
+      - patterns:
+        - pattern-inside: |
+            $C = $SAN.clean(...)
+            ...
+        - pattern: html.unescape($C)

@@ -1,0 +1,17 @@
+rules:
+- id: pkcs7-first-cert-as-signer
+  languages: [go]
+  severity: ERROR
+  message: >-
+    The first certificate in a PKCS#7/CMS bag is treated as the signer. The bag is
+    attacker-controlled; the signer must be found by the SignerInfo issuer+serial
+    (or SKI) and the signature verified with that key.
+  metadata:
+    cwe: "CWE-347: Improper Verification of Cryptographic Signature"
+    category: security
+    confidence: HIGH
+    references:
+      - https://github.com/advisories/GHSA-2wq3-cx7v-37f3
+  pattern-either:
+    - pattern: $P7.Certificates[0]
+    - pattern: $SD.Certificates[0]
