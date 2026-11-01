@@ -4,6 +4,8 @@ Semgrep rules distilled from **real, publicly disclosed vulnerabilities** found 
 Every rule links to the published report / GitHub advisory it came from, and ships with
 positive (`ruleid`) and negative (`ok`) test cases.
 
+![demo](docs/demo.gif)
+
 ## Usage
 
 ```sh
