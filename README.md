@@ -7,12 +7,34 @@ positive (`ruleid`) and negative (`ok`) test cases.
 ## Usage
 
 ```sh
-# whole pack
-semgrep --config https://raw.githubusercontent.com/ucsurf/vuln-patterns/main/rules/ .
-# or a local checkout
-semgrep --config rules/ path/to/code
+git clone --depth 1 https://github.com/ucsurf/vuln-patterns
+semgrep --config vuln-patterns/rules/ path/to/code
 # a single rule
-semgrep --config rules/go/crypto/pkcs7-first-cert-as-signer.yaml .
+semgrep --config vuln-patterns/rules/go/crypto/pkcs7-first-cert-as-signer.yaml path/to/code
+```
+
+### Example (real output, semgrep 1.x)
+
+```console
+$ cat app.py
+import html, bleach
+
+def render(comment):
+    return html.unescape(bleach.clean(comment))
+
+$ semgrep --config vuln-patterns/rules/ app.py --metrics=off
+┌────────────────┐
+│ 1 Code Finding │
+└────────────────┘
+
+    app.py
+   ❯❯❱ vuln-patterns.rules.python.xss.sanitizer-output-mutated-after-clean
+          ❰❰ Blocking ❱❱
+          HTML is decoded/unescaped after sanitization. Any
+          transformation after the sanitizer can reintroduce markup
+          (sanitizer bypass / mXSS). Sanitize last.
+
+            4┆ return html.unescape(bleach.clean(comment))
 ```
 
 ## Rules

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.1] - 2026-11-01
+- Fix README usage: `--config <raw.githubusercontent dir URL>` returned 404; document clone-based usage.
+- Add a real example run to the README.
+
 ## [0.1.0] - 2026-10-31
 - Initial 15 rules (JavaScript/TypeScript, Python, Go, Rust, PHP, C) with tests and docs.
 - CI: semgrep validate/test, yamllint, CodeQL, OpenSSF Scorecard.
