@@ -1,10 +1,19 @@
 # vuln-patterns
 
+[![CI](https://github.com/ucsurf/vuln-patterns/actions/workflows/test.yml/badge.svg)](https://github.com/ucsurf/vuln-patterns/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/ucsurf/vuln-patterns)](https://github.com/ucsurf/vuln-patterns/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ucsurf/vuln-patterns/badge)](https://scorecard.dev/viewer/?uri=github.com/ucsurf/vuln-patterns)
+
 Semgrep rules distilled from **real, publicly disclosed vulnerabilities** found by [uc.surf](https://uc.surf/findings/).
 Every rule links to the published report / GitHub advisory it came from, and ships with
 positive (`ruleid`) and negative (`ok`) test cases.
 
 ![demo](docs/demo.gif)
+
+## Why
+
+Generic rule packs cover well-known sinks. The bugs that become advisories are usually subtler: a sanitizer whose output gets decoded again, a PKCS#7 parser that trusts the first certificate, or a decoder with no depth limit. Each rule here encodes one such pattern from a real, published advisory, so you can check whether your code repeats a mistake that has already been exploited somewhere else.
 
 ## Usage
 
@@ -18,25 +27,53 @@ semgrep --config vuln-patterns/rules/go/crypto/pkcs7-first-cert-as-signer.yaml p
 ### Example (real output, semgrep 1.x)
 
 ```console
-$ cat app.py
+$ cat docs/demo/app.py
 import html, bleach
 
 def render(comment):
     return html.unescape(bleach.clean(comment))
 
-$ semgrep --config vuln-patterns/rules/ app.py --metrics=off
+$ semgrep --config rules/ docs/demo/app.py --metrics=off
 ┌────────────────┐
 │ 1 Code Finding │
 └────────────────┘
 
-    app.py
-   ❯❯❱ vuln-patterns.rules.python.xss.sanitizer-output-mutated-after-clean
+    docs/demo/app.py
+   ❯❯❱ rules.python.xss.sanitizer-output-mutated-after-clean
           ❰❰ Blocking ❱❱
           HTML is decoded/unescaped after sanitization. Any
           transformation after the sanitizer can reintroduce markup
           (sanitizer bypass / mXSS). Sanitize last.
 
             4┆ return html.unescape(bleach.clean(comment))
+```
+
+## GitHub Actions
+
+```yaml
+jobs:
+  vuln-patterns:
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with: { persist-credentials: false }
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with: { repository: ucsurf/vuln-patterns, ref: v0.1.2, path: .vuln-patterns, persist-credentials: false }
+      - run: pipx run semgrep==1.183.0 --config .vuln-patterns/rules/ --error --metrics=off --exclude .vuln-patterns .
+```
+
+## pre-commit
+
+Use Semgrep's own hook and point it at a checkout of these rules (for example a git submodule at `.vuln-patterns`):
+
+```yaml
+repos:
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v1.183.0
+    hooks:
+      - id: semgrep
+        args: ["--config", ".vuln-patterns/rules/", "--error", "--metrics=off", "--skip-unknown-extensions"]
 ```
 
 ## Rules
@@ -59,11 +96,17 @@ $ semgrep --config vuln-patterns/rules/ app.py --metrics=off
 | [`create-then-set-permissions`](docs/create-then-set-permissions.md) | rust | Create-then-chmod permission window | CWE-732 | [uc.surf bzip2-cli](https://uc.surf/findings/security/rust/trifectatechfoundation__libbzip2-rs/2026-10-06-bzip2-cli-decompress-output-permissions/) · GHSA-4j37-jjpm-9865 |
 | [`ammonia-svg-animation-tags`](docs/ammonia-svg-animation-tags.md) | rust | SVG animation tags allowed in sanitizer | CWE-79 | [uc.surf ammonia](https://uc.surf/findings/security/rust/rust-ammonia__ammonia/2026-10-05-animatetransform-animation-xss-bypass/) · GHSA-f2pc-rwv3-69mv |
 
-## Why another rule pack?
+## Comparison with other rule packs
 
 - [semgrep-rules](https://github.com/semgrep/semgrep-rules) is broad and generic; [0xdea/semgrep-rules](https://github.com/0xdea/semgrep-rules) targets C/C++; [trailofbits/semgrep-rules](https://github.com/trailofbits/semgrep-rules) focuses on Go/Python/ML.
 - Here every rule starts from a disclosed bug with an advisory, covering niches the others miss: sanitizer allow-lists and post-sanitize transforms, PKCS#7 signer confusion, untrusted timestamps, decoder depth/quadratic DoS, Prisma mass assignment, SSO email trust.
 - Each rule has a short write-up in [`docs/`](docs/).
+
+## Limitations
+
+- These rules are pattern-based and mostly intra-procedural. A finding is a lead to review, not proof of a vulnerability. If data flows through helper functions across files, expect misses.
+- Each rule covers the API shape from its source advisory (bleach/html, Prisma, ajv, templ, ...). Other libraries with the same bug class are not covered.
+- The rules are tested with Semgrep 1.183.0 (OSS engine). Older versions may reject some syntax.
 
 ## Development
 
@@ -71,6 +114,7 @@ $ semgrep --config vuln-patterns/rules/ app.py --metrics=off
 semgrep --validate --config rules/
 semgrep --test rules/
 yamllint rules/
+vhs docs/demo.tape   # regenerate docs/demo.gif from docs/demo/app.py
 ```
 
 Only patterns from **published** findings are added. Embargoed reports never land here.
